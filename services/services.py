@@ -83,12 +83,9 @@ class Ship:
 
 
 class GamePole:
-    def __init__(self, size=10):
+    def __init__(self, size=8):
         self._size = size
         self._ships = []
-
-    # def is_collides(self, ship):
-    #     return any([ship.is_collide(s) for s in self._ships if s != ship])
 
     def __is_collides(self, ship):
         return any([ship.is_collide(s) for s in self._ships if s != ship])
@@ -104,7 +101,7 @@ class GamePole:
 
     def init(self):
         self._ships = []
-        for n in range(4, 0, -1):
+        for n in range(3, 0, -1): # MAX ТРЕХЛИНЕЙНЫЙ
             for _ in range(5 - n):
                 self._ships.append(Ship(n, randint(1, 2)))
         for ship in self._ships:
