@@ -2,13 +2,13 @@ from random import randint, choice
 
 
 class Ship:
-    def __init__(self, length, tp=1, x=None, y=None, size=10):
+    def __init__(self, length, tp=1, x=None, y=None, size=8):
         self._length = length
         self._tp = tp
         self.x = x
         self.y = y
         self.__size = size
-        self._cells = [1] * length
+        self.cells: dict[tuple[int, int], int] = {}
         self._is_move = True
 
     @property
@@ -28,12 +28,15 @@ class Ship:
     def y(self, value):
         self._y = value
 
-    def set_start_coords(self, x, y):
+    def set_start_xy(self, x, y):
+        self.cells = {}
         self.x = x
         self.y = y
+        for tuple_of_xy in self._get_pole():
+            self[tuple_of_xy] = 1
 
     def get_start_coords(self):
-        return self.x, self.y
+        return self.y, self.x
 
     def _get_ship_poles(self):
         if self._tp == 1:
@@ -46,9 +49,9 @@ class Ship:
 
     def _get_pole(self):
         if self._tp == 1:
-            res = tuple([(self.y, x) for x in range(self.x, self.x + self._length)])
+            res = tuple((self.y, x) for x in range(self.x, self.x + self._length))
         else:
-            res = tuple([(y, self.x) for y in range(self.y, self.y + self._length)])
+            res = tuple((y, self.x) for y in range(self.y, self.y + self._length))
         return res
 
     def is_collide(self, ship):
@@ -70,27 +73,33 @@ class Ship:
                 self.y += go
 
     def __getitem__(self, key):
-        if not 0 <= key < self._length:
-            raise ValueError(f'Длина корабля {self._length}')
-        return self._cells[key]
+        if key not in self._get_pole():
+            raise ValueError('Корабль не плавает в этих водах')
+        return self.cells[key]
 
     def __setitem__(self, key, value):
-        if not 0 <= key < self._length:
-            raise ValueError(f'Длина корабля {self._length}')
+        if key not in self._get_pole():
+            raise ValueError('Корабль не плавает в этих водах')
         if value not in (1, 2):
-            raise ValueError('Значение должно быть либо 1, либо 2')
-        self._cells[key] = value
+            raise ValueError('Значение должно быть либо 2 - подбитая часть корабля, либо 1 - целая часть')
+        self.cells[key] = value
 
 
 class GamePole:
     def __init__(self, size=8):
         self._size = size
         self._ships = []
+        self._hits = []
+        self._all_cells: list[tuple[int, int]] = []
+
+    def set_hit(self, hit:tuple):
+        self._hits.append(hit)
 
     def __is_collides(self, ship):
+
         return any([ship.is_collide(s) for s in self._ships if s != ship])
 
-    def __get_xy(self, ship):
+    def __get_start_xy(self, ship):
         if ship._tp == 1:
             x = randint(0, self._size - 1 - ship._length)
             y = randint(0, self._size - 1)
@@ -101,18 +110,22 @@ class GamePole:
 
     def init(self):
         self._ships = []
-        for n in range(3, 0, -1): # MAX ТРЕХЛИНЕЙНЫЙ
+        self._all_cells = []
+        for n in range(3, 0, -1): # MAX ТРЕХЛИНЕЙНЫЙ 
             for _ in range(5 - n):
-                self._ships.append(Ship(n, randint(1, 2)))
+                self._ships.append(Ship(n, randint(1, 2), size=self._size))
         for ship in self._ships:
-            ship.x, ship.y = self.__get_xy(ship)
+            x, y = self.__get_start_xy(ship)
+            ship.set_start_xy(x, y)
             n = 0
-            while ship.is_out_pole(self._size) or self.__is_collides(ship):
+            while self.__is_collides(ship):
                 n += 1
-                ship.x, ship.y = self.__get_xy(ship)
+                x, y = self.__get_start_xy(ship)
+                ship.set_start_xy(x, y)
                 if n == 100000:
-                    print('внимание 100000')
+                    print('внимание 100000')  # Слишком много попыток  -> начинаем сначала
                     self.init()
+            [self._all_cells.append(cell) for cell in ship.cells.keys()]
 
 
     def get_ships(self):
@@ -137,13 +150,42 @@ class GamePole:
         [print(*line) for line in pole]
 
     def get_pole(self):
-
+        '''
+        Создается поле в котором:
+        0 - пустое поле
+        1 - находится корабль
+        2 - находится подбитая часть корабля
+        3 - промах
+        '''
         pole = [[0] * self._size for _ in range(self._size)]
         for ship in self._ships:
             if ship.x is not None and ship.y is not None:
-                for y, x in ship._get_pole():
-                    pole[y][x] = 1
+                for coords, value in ship.cells.items():
+                    y, x = coords
+                    pole[y][x] = value
+
+        for cords in self._hits:
+            y, x = cords
+            pole[y][x] = 3
         return tuple([tuple(i) for i in pole])
+
+    def hit(self, *yx):
+        if yx in self._all_cells:
+            for ship in self._ships:
+                if yx in ship.cells:
+                    if ship[yx] == 1:
+                        ship[yx] = 2
+                        return 'hit'
+                    else:
+                        return 'already_fight'
+        else:
+            if yx in self._hits:
+                return 'already_fight'
+            else:
+                self._hits.append(yx)
+                return 'miss'
+
+
 
 
 
