@@ -172,14 +172,19 @@ class GamePole:
     def hit(self, *yx):
         if yx in self._all_cells:
             for ship in self._ships:
-                if yx in ship.cells:
+                if yx in ship.cells: # попадание в корабль
                     if ship[yx] == 1:
                         ship[yx] = 2
-                        return 'hit'
+                        if all(all(map(lambda x: x == 2, s.cells.values())) for s in self._ships):
+                            return 'victory'
+                        if all(map(lambda x: x == 2, ship.cells.values())): # потопил
+                            return 'sunk'
+                        else:
+                            return 'hit'
                     else:
                         return 'already_fight'
         else:
-            if yx in self._hits:
+            if yx in self._hits: # стреляли в это поле
                 return 'already_fight'
             else:
                 self._hits.append(yx)
