@@ -22,7 +22,7 @@ def create_user_kb(
     # Создаем кнопки
     buttons: list[InlineKeyboardButton] = [
         InlineKeyboardButton(
-            text=_TEMP[x + 1]+str(y + 1) if lst[y][x] == 0 else '🟫' if lst[y][x] == 1 else '🟥',
+            text=_TEMP[y + 1]+str(x + 1) if lst[y][x] == 0 else '🟫' if lst[y][x] == 1 else '🟥',
             callback_data='user'+str(y)+str(x)
         )
         for y in range(len(lst))
@@ -54,7 +54,7 @@ def create_comp_kb(
     # Создаем кнопки
     buttons: list[InlineKeyboardButton] = [
         InlineKeyboardButton(
-            text=_TEMP[x + 1]+str(y + 1) if lst[y][x] in (0, 1) else '🌊' if lst[y][x] == 3 else '🟥',
+            text=_TEMP[y + 1]+str(x + 1) if lst[y][x] in (0, 1) else '🌊' if lst[y][x] == 3 else '🟥',
             callback_data='comp'+str(y)+str(x)
         )
         for y in range(len(lst))
