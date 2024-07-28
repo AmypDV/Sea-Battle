@@ -10,15 +10,20 @@ class UsersCallbackFactory(CallbackData, prefix='user'):
     x: str
     y: int
 
-def create_user_kb(lst: list
+def create_user_kb(
+        lst: list,
+        *args: str
                    ) -> InlineKeyboardMarkup:
+    '''
+    :return: возвращает клавиатуру с флотом игрока
+    '''
     # Инициализируем билдер
     kb_builder = InlineKeyboardBuilder()
     # Создаем кнопки
     buttons: list[InlineKeyboardButton] = [
         InlineKeyboardButton(
-            text=_TEMP[x + 1]+str(y + 1) if lst[x][y] == 0 else '🟫',
-            callback_data='user'+str(x)+str(y)
+            text=_TEMP[x + 1]+str(y + 1) if lst[y][x] == 0 else '🟫' if lst[y][x] == 1 else '🟥',
+            callback_data='user'+str(y)+str(x)
         )
         for y in range(len(lst))
         for x in range(len(lst[0]))
@@ -26,44 +31,44 @@ def create_user_kb(lst: list
     width = len(lst)
     # Распаковываем список с кнопками в билдер методом row c параметром width
     kb_builder.row(*buttons, width=width)
-    kb_builder.row(
-        InlineKeyboardButton(
-            text=LEXICON['random'],
-            callback_data='random'
-        ),
-        InlineKeyboardButton(
-            text=LEXICON['start_game'],
-            callback_data='start_game'
-        ),
-        width=1
-    )
+
+    if args:
+        for button in args:
+            kb_builder.row(InlineKeyboardButton(
+                text=LEXICON[button] if button in LEXICON else button,
+                callback_data=button))
 
     # Возвращаем объект инлайн-клавиатуры
     return kb_builder.as_markup()
 
-# Функция для формирования инлайн-клавиатуры на лету
-def create_inline_kb(width: int,
-                     *args: str,
-                     **kwargs: str) -> InlineKeyboardMarkup:
+
+def create_comp_kb(
+        lst: list,
+        *args: str
+                   ) -> InlineKeyboardMarkup:
+    '''
+    :return: возвращает клавиатуру с флотом компьютера
+    '''
     # Инициализируем билдер
     kb_builder = InlineKeyboardBuilder()
-    # Инициализируем список для кнопок
-    buttons: list[InlineKeyboardButton] = []
-
-    # Заполняем список кнопками из аргументов args и kwargs
-    if args:
-        for button in args:
-            buttons.append(InlineKeyboardButton(
-                text=lexicon_ru[button] if button in lexicon_ru else button,
-                callback_data=button))
-    if kwargs:
-        for button, text in kwargs.items():
-            buttons.append(InlineKeyboardButton(
-                text=text,
-                callback_data=button))
-
+    # Создаем кнопки
+    buttons: list[InlineKeyboardButton] = [
+        InlineKeyboardButton(
+            text=_TEMP[x + 1]+str(y + 1) if lst[y][x] in (0, 1) else '🌊' if lst[y][x] == 3 else '🟥',
+            callback_data='comp'+str(y)+str(x)
+        )
+        for y in range(len(lst))
+        for x in range(len(lst[0]))
+    ]
+    width = len(lst)
     # Распаковываем список с кнопками в билдер методом row c параметром width
     kb_builder.row(*buttons, width=width)
+
+    if args:
+        for button in args:
+            kb_builder.row(InlineKeyboardButton(
+                text=LEXICON[button] if button in LEXICON else button,
+                callback_data=button))
 
     # Возвращаем объект инлайн-клавиатуры
     return kb_builder.as_markup()
