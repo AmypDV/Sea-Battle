@@ -6,7 +6,7 @@ import logging
 
 from lexicon.lexicon_ru import LEXICON
 from datebase.datebase import write_to_bd, UserBD
-from keyboards.inline_kb import create_user_kb, create_comp_kb
+from keyboards.inline_kb import create_user_kb, create_comp_kb, _TEMP
 from services.services import GamePole
 from filters.filters import IsDigitCallbackData, IsBookmarksCallbackData, IsDelBookmarkCallbackData
 
@@ -96,7 +96,12 @@ async def get_callback_random(callback: CallbackQuery, _user_bd: list[UserBD], u
             await callback.answer()
     elif res == 'hit':
         await callback.message.edit_text(
-            text=f"{LEXICON['hit']: ^40}",
+            text=LEXICON['hit'].format(_TEMP[y + 1] + str(x + 1)),
+            reply_markup=create_comp_kb(pole.get_pole(), 'pole_comp')
+        )
+    elif res == 'sunk':
+        await callback.message.edit_text(
+            text=LEXICON['sunk'].format(_TEMP[y + 1] + str(x + 1)),
             reply_markup=create_comp_kb(pole.get_pole(), 'pole_comp')
         )
     elif res == 'miss':
@@ -104,5 +109,20 @@ async def get_callback_random(callback: CallbackQuery, _user_bd: list[UserBD], u
             text=f"{LEXICON['miss']: ^40}",
             reply_markup=create_comp_kb(pole.get_pole(), 'pole_comp')
         )
+    elif res == 'victory':
+        await callback.message.edit_text(
+            text=f"{LEXICON['victory']: ^40}"
+        )
 
 
+@user_router.callback_query(F.data.startswith('user'))
+async def get_callback_random(callback: CallbackQuery, _user_bd: list[UserBD], user_id: int):
+    logger.debug('Начало хэндлера %s', __name__)
+
+    try:
+        await callback.message.edit_text(
+            text=LEXICON['already_flot'],
+            reply_markup=callback.message.reply_markup
+        )
+    except Exception:
+        await callback.answer()
