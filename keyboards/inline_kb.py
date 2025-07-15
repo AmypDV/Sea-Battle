@@ -7,7 +7,11 @@ from lexicon.lexicon_ru import LEXICON
 _TEMP = dict(zip(range(1,11), 'АБВГДЕЖЗИК'))
 
 class UsersCallbackFactory(CallbackData, prefix='user'):
-    x: str
+    x: int
+    y: int
+
+class CompsCallbackFactory(CallbackData, prefix='comp'):
+    x: int
     y: int
 
 def create_user_kb(
@@ -20,14 +24,16 @@ def create_user_kb(
     # Инициализируем билдер
     kb_builder = InlineKeyboardBuilder()
     # Создаем кнопки
-    buttons: list[InlineKeyboardButton] = [
-        InlineKeyboardButton(
-            text=_TEMP[y + 1]+str(x + 1) if lst[y][x] == 0 else '🟫' if lst[y][x] == 1 else '🟥',
-            callback_data='user'+str(y)+str(x)
-        )
-        for y in range(len(lst))
-        for x in range(len(lst[0]))
-    ]
+    buttons = []
+    for y in range(len(lst)):
+        for x in range(len(lst[0])):
+            buttons.append(InlineKeyboardButton(
+                text=_TEMP[y + 1] + str(x + 1) if lst[y][x] == 0 else '🟫' if lst[y][x] == 1 else '🟥',
+                callback_data=UsersCallbackFactory(
+                    x=x,
+                    y=y,
+                ).pack()
+            ))
     width = len(lst)
     # Распаковываем список с кнопками в билдер методом row c параметром width
     kb_builder.row(*buttons, width=width)
@@ -55,7 +61,10 @@ def create_comp_kb(
     buttons: list[InlineKeyboardButton] = [
         InlineKeyboardButton(
             text=_TEMP[y + 1]+str(x + 1) if lst[y][x] in (0, 1) else '🌊' if lst[y][x] == 3 else '🟥',
-            callback_data='comp'+str(y)+str(x)
+            callback_data=CompsCallbackFactory(
+                x=x,
+                y=y,
+            ).pack()
         )
         for y in range(len(lst))
         for x in range(len(lst[0]))
