@@ -6,7 +6,8 @@ import logging
 
 from lexicon.lexicon_ru import LEXICON
 from datebase.datebase import write_to_bd, UserBD
-from keyboards.inline_kb import create_user_kb, create_comp_kb, _TEMP
+from keyboards.inline_kb import (create_user_kb, create_comp_kb,
+                                 UsersCallbackFactory, CompsCallbackFactory, _TEMP)
 from services.services import GamePole
 from filters.filters import IsDigitCallbackData, IsBookmarksCallbackData, IsDelBookmarkCallbackData
 
@@ -79,11 +80,15 @@ async def get_callback_random(callback: CallbackQuery, _user_bd: list[UserBD], u
         reply_markup=create_user_kb(pole.get_pole(), 'pole_comp')
     )
 
-@user_router.callback_query(F.data.startswith('comp'))
-async def get_callback_random(callback: CallbackQuery, _user_bd: list[UserBD], user_id: int):
+@user_router.callback_query(CompsCallbackFactory.filter())
+async def get_callback_random(callback: CallbackQuery,
+                              callback_data: CompsCallbackFactory,
+                              _user_bd: list[UserBD], user_id: int):
     logger.debug('Начало хэндлера %s', __name__)
 
-    y, x = map(int, callback.data[4:])
+    x = callback_data.x
+    y = callback_data.y
+
     res = _user_bd[user_id].comp_pole.hit(y, x)
     pole = _user_bd[user_id].comp_pole
     if res == 'already_fight':
@@ -92,6 +97,9 @@ async def get_callback_random(callback: CallbackQuery, _user_bd: list[UserBD], u
                 text=LEXICON['already_fight'],
                 reply_markup=callback.message.reply_markup
             )
+            await callback.answer(
+                text=LEXICON['already_fight']
+            )
         except Exception:
             await callback.answer()
     elif res == 'hit':
@@ -99,23 +107,35 @@ async def get_callback_random(callback: CallbackQuery, _user_bd: list[UserBD], u
             text=LEXICON['hit'].format(_TEMP[y + 1] + str(x + 1)),
             reply_markup=create_comp_kb(pole.get_pole(), 'pole_comp')
         )
+        await callback.answer(
+            text=LEXICON['hit'].format(_TEMP[y + 1] + str(x + 1))
+        )
     elif res == 'sunk':
         await callback.message.edit_text(
             text=LEXICON['sunk'].format(_TEMP[y + 1] + str(x + 1)),
             reply_markup=create_comp_kb(pole.get_pole(), 'pole_comp')
+        )
+        await callback.answer(
+            text=LEXICON['sunk'].format(_TEMP[y + 1] + str(x + 1)),
         )
     elif res == 'miss':
         await callback.message.edit_text(
             text=f"{LEXICON['miss']: ^40}",
             reply_markup=create_comp_kb(pole.get_pole(), 'pole_comp')
         )
+        await callback.answer(
+            text=f"{LEXICON['miss']: ^40}",
+        )
     elif res == 'victory':
         await callback.message.edit_text(
             text=f"{LEXICON['victory']: ^40}"
         )
+        await callback.answer(
+            text=f"{LEXICON['victory']: ^40}",
+        )
 
 
-@user_router.callback_query(F.data.startswith('user'))
+@user_router.callback_query(UsersCallbackFactory.filter())
 async def get_callback_random(callback: CallbackQuery, _user_bd: list[UserBD], user_id: int):
     logger.debug('Начало хэндлера %s', __name__)
 
