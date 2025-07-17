@@ -80,8 +80,11 @@ class Ship:
     def __setitem__(self, key, value):
         if key not in self._get_pole():
             raise ValueError('Корабль не плавает в этих водах')
-        if value not in (1, 2):
-            raise ValueError('Значение должно быть либо 2 - подбитая часть корабля, либо 1 - целая часть')
+        if value not in (1, 2, 4):
+            raise ValueError('Значение должно быть:'
+                             '2 - подбитая часть корабля,'
+                             '1 - целая часть,'
+                             '4 - потонувший корабль')
         self.cells[key] = value
 
 
@@ -108,6 +111,7 @@ class GamePole:
             y = randint(0, self._size - 1 - ship._length)
         return x, y
 
+    #Расставляет корабли на поле в случайном порядке Для поля 8 на 8 два корабля трехлинейных
     def init(self):
         self._ships = []
         self._all_cells = []
@@ -122,8 +126,7 @@ class GamePole:
                 n += 1
                 x, y = self.__get_start_xy(ship)
                 ship.set_start_xy(x, y)
-                if n == 100000:
-                    print('внимание 100000')  # Слишком много попыток  -> начинаем сначала
+                if n == 100000:  # Слишком много попыток  -> начинаем сначала
                     self.init()
             [self._all_cells.append(cell) for cell in ship.cells.keys()]
 
@@ -131,6 +134,7 @@ class GamePole:
     def get_ships(self):
         return self._ships
 
+    # сдвигает корабли по направлению на 1 клетку вперед или назад
     def move_ships(self):
         for ship in self._ships:
             if ship._is_move:
@@ -145,6 +149,7 @@ class GamePole:
                         ship.x = x
                         ship.y = y
 
+    # печатает поле с кораблями
     def show(self):
         pole = self.get_pole()
         [print(*line) for line in pole]
@@ -178,6 +183,8 @@ class GamePole:
                         if all(all(map(lambda x: x == 2, s.cells.values())) for s in self._ships):
                             return 'victory'
                         if all(map(lambda x: x == 2, ship.cells.values())): # потопил
+                            for i in ship.cells.keys():
+                                ship[i] = 4
                             return 'sunk'
                         else:
                             return 'hit'
@@ -190,6 +197,11 @@ class GamePole:
                 self._hits.append(yx)
                 return 'miss'
 
+    def random_hit(self):
+        y = randint(0, self._size-1)
+        x = randint(0, self._size-1)
+        print(f'удар соперника y={y} x={x}' )
+        return y, x, self.hit(y, x)
 
 
 
