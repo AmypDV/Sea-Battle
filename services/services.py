@@ -161,6 +161,7 @@ class GamePole:
         1 - находится корабль
         2 - находится подбитая часть корабля
         3 - промах
+        4- потопление корабля
         '''
         pole = [[0] * self._size for _ in range(self._size)]
         for ship in self._ships:
