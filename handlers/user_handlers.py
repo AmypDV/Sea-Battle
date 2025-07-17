@@ -1,8 +1,12 @@
+import asyncio
+
 from aiogram import Router, F
 from aiogram.types import CallbackQuery, Message
 from aiogram.filters import CommandStart, Command
 
 import logging
+
+from pyexpat.errors import messages
 
 from lexicon.lexicon_ru import LEXICON
 from datebase.datebase import write_to_bd, UserBD
@@ -123,15 +127,12 @@ async def get_callback_random(callback: CallbackQuery,
             text=f"{LEXICON['miss']: ^40}",
             reply_markup=create_comp_kb(pole.get_pole(), 'pole_comp')
         )
-        await callback.answer(
-            text=f"{LEXICON['miss']: ^40}",
-        )
+        await asyncio.sleep(1)
+        await comp_atack(callback=callback, _user_bd=_user_bd, user_id=user_id)
+
     elif res == 'victory':
         await callback.message.edit_text(
             text=f"{LEXICON['victory']: ^40}"
-        )
-        await callback.answer(
-            text=f"{LEXICON['victory']: ^40}",
         )
 
 
@@ -146,3 +147,42 @@ async def get_callback_random(callback: CallbackQuery, _user_bd: list[UserBD], u
         )
     except Exception:
         await callback.answer()
+
+async def comp_atack(callback: CallbackQuery,
+                     _user_bd: list[UserBD], user_id: int):
+    messages= [callback.message.message_id]
+    pole = _user_bd[user_id].user_pole
+    await callback.message.edit_text(
+        text=f"{LEXICON['miss']: ^40}",
+        reply_markup=create_comp_kb(pole.get_pole(), 'pole_comp')
+    )
+    await asyncio.sleep(1)
+    pole = _user_bd[user_id].user_pole
+    await callback.message.edit_text(
+        text=f"{LEXICON['hit_comp']: ^40}",
+        reply_markup=create_user_kb(pole.get_pole(), 'pole_comp')
+    )
+    await asyncio.sleep(1)
+    y, x, res = _user_bd[user_id].user_pole.random_hit()
+
+    while res in ('sunk', 'hit', 'already_fight'):
+        while res == 'already_fight':
+            y, x, res = _user_bd[user_id].user_pole.random_hit()
+        await asyncio.sleep(1)
+        pole = _user_bd[user_id].user_pole
+        await callback.message.edit_text(
+            text=LEXICON['luck_com_attak'].format(_TEMP[y + 1] + str(x + 1)),
+            reply_markup=create_user_kb(pole.get_pole(), 'pole_comp')
+        )
+        await asyncio.sleep(1)
+        res = _user_bd[user_id].user_pole.random_hit()
+    if res == 'victory':
+        await callback.message.edit_text(
+            text=f"{LEXICON['lose']: ^40}"
+        )
+    else:
+        await callback.message.edit_text(
+            text=LEXICON['miss_comp'].format(_TEMP[y + 1] + str(x + 1)),
+            reply_markup=create_user_kb(pole.get_pole(), 'pole_comp')
+        )
+    callback.message.answer()
