@@ -20,9 +20,14 @@ user_router = Router()
 logger = logging.getLogger(__name__)
 
 @user_router.message(CommandStart())
-async def get_start_command(message: Message):
+async def get_start_command(message: Message, _user_bd):
 
     logger.debug('Начало хэндлера %s', __name__)
+
+    user_id = message.from_user.id
+    if user_id not in _user_bd:
+        _user_bd[user_id] = UserBD()
+        write_to_bd()
     await message.answer(text=LEXICON['/start'])
 
 
@@ -30,6 +35,7 @@ async def get_start_command(message: Message):
 async def get_begin_command(message: Message, _user_bd: list[UserBD], user_id:int):
 
     logger.debug('Начало хэндлера %s', __name__)
+
     _user_bd[user_id].in_game = True
     _user_bd[user_id].games += 1
     user_pole = GamePole()
@@ -37,11 +43,8 @@ async def get_begin_command(message: Message, _user_bd: list[UserBD], user_id:in
     _user_bd[user_id].user_pole = user_pole
     _comp_pole = GamePole()
     _comp_pole.init()
-
-
     _comp_pole.show()
-
-
+    _user_bd[user_id].chat = []
 
     _user_bd[user_id].comp_pole = _comp_pole
     await message.answer(text=f'{LEXICON["/beginning"]: ^40}',
