@@ -17,6 +17,7 @@ class UserBD:
     comp_pole: GamePole = field(default_factory=list)
     games: int = 0
     wins: int = 0
+    chat: list[str] = field(default_factory=list)
 
 
 def write_to_bd() -> None:
@@ -31,7 +32,7 @@ def read_from_bd() -> set[dict]:
     try:
         with open(path, 'rb') as file:
             res = pickle.load(file)
-        logger.info('Чтение из БД')
+        logger.info('Чтение из БД', 'res:', res)
         return res
     except FileNotFoundError:
         print("Загрузить БД пользователей не возможно. Отсутствует файл datebase\\bd.pickle.\nПрекращение работы")
