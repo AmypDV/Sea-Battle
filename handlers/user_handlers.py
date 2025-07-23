@@ -87,19 +87,20 @@ async def get_callback_polecomp(callback: CallbackQuery, _user_bd: list[UserBD],
     )
 
 @user_router.callback_query(F.data == 'pole_user')
-async def get_callback_random(callback: CallbackQuery, _user_bd: list[UserBD], user_id: int):
+async def get_callback_poleuser(callback: CallbackQuery, _user_bd: list[UserBD], user_id: int):
     logger.debug('Начало хэндлера %s', __name__)
 
     pole = _user_bd[user_id].user_pole
     await callback.message.edit_text(
-        text=f"{LEXICON['your_flot']: ^40}",
+        text=await append_text(_user_bd, user_id, ''),
         reply_markup=create_user_kb(pole.get_pole(), 'pole_comp')
     )
 
 @user_router.callback_query(CompsCallbackFactory.filter())
-async def get_callback_random(callback: CallbackQuery,
+async def get_callback_compsbutton(callback: CallbackQuery,
                               callback_data: CompsCallbackFactory,
-                              _user_bd: list[UserBD], user_id: int):
+                              _user_bd: list[UserBD], user_id: int,
+                              ):
     logger.debug('Начало хэндлера %s', __name__)
 
     x = callback_data.x
@@ -110,33 +111,24 @@ async def get_callback_random(callback: CallbackQuery,
     if res == 'already_fight':
         try:
             await callback.message.edit_text(
-                text=LEXICON['already_fight'],
+                text=await append_text(_user_bd, user_id, LEXICON['already_fight']),
                 reply_markup=callback.message.reply_markup
-            )
-            await callback.answer(
-                text=LEXICON['already_fight']
             )
         except Exception:
             await callback.answer()
     elif res == 'hit':
         await callback.message.edit_text(
-            text=LEXICON['hit'].format(_TEMP[y + 1] + str(x + 1)),
+            text=await append_text(_user_bd, user_id, LEXICON['hit'].format(_TEMP[y + 1] + str(x + 1))),
             reply_markup=create_comp_kb(pole.get_pole(), 'pole_comp')
-        )
-        await callback.answer(
-            text=LEXICON['hit'].format(_TEMP[y + 1] + str(x + 1))
         )
     elif res == 'sunk':
         await callback.message.edit_text(
-            text=LEXICON['sunk'].format(_TEMP[y + 1] + str(x + 1)),
+            text=await append_text(_user_bd, user_id, LEXICON['sunk'].format(_TEMP[y + 1] + str(x + 1))),
             reply_markup=create_comp_kb(pole.get_pole(), 'pole_comp')
-        )
-        await callback.answer(
-            text=LEXICON['sunk'].format(_TEMP[y + 1] + str(x + 1)),
         )
     elif res == 'miss':
         await callback.message.edit_text(
-            text=f"{LEXICON['miss']: ^40}",
+            text=await append_text(_user_bd, user_id, LEXICON['miss'].format(_TEMP[y + 1] + str(x + 1))),
             reply_markup=create_comp_kb(pole.get_pole(), 'pole_comp')
         )
         await asyncio.sleep(1)
@@ -149,7 +141,7 @@ async def get_callback_random(callback: CallbackQuery,
 
 
 @user_router.callback_query(UsersCallbackFactory.filter())
-async def get_callback_random(callback: CallbackQuery, _user_bd: list[UserBD], user_id: int):
+async def get_callback_userbutton(callback: CallbackQuery, _user_bd: list[UserBD], user_id: int):
     logger.debug('Начало хэндлера %s', __name__)
 
     try:
@@ -162,39 +154,44 @@ async def get_callback_random(callback: CallbackQuery, _user_bd: list[UserBD], u
 
 async def comp_atack(callback: CallbackQuery,
                      _user_bd: list[UserBD], user_id: int):
-    messages= [callback.message.message_id]
-    pole = _user_bd[user_id].user_pole
-    await callback.message.edit_text(
-        text=f"{LEXICON['miss']: ^40}",
-        reply_markup=create_comp_kb(pole.get_pole(), 'pole_comp')
-    )
     await asyncio.sleep(1)
     pole = _user_bd[user_id].user_pole
     await callback.message.edit_text(
-        text=f"{LEXICON['hit_comp']: ^40}",
+        text=await append_text(_user_bd, user_id, LEXICON['hit_comp']),
         reply_markup=create_user_kb(pole.get_pole(), 'pole_comp')
     )
-    await asyncio.sleep(1)
+
     y, x, res = _user_bd[user_id].user_pole.random_hit()
 
-    while res in ('sunk', 'hit', 'already_fight'):
-        while res == 'already_fight':
-            y, x, res = _user_bd[user_id].user_pole.random_hit()
+    while res in ('sunk', 'hit'):
         await asyncio.sleep(1)
         pole = _user_bd[user_id].user_pole
-        await callback.message.edit_text(
-            text=LEXICON['luck_com_attak'].format(_TEMP[y + 1] + str(x + 1)),
-            reply_markup=create_user_kb(pole.get_pole(), 'pole_comp')
-        )
-        await asyncio.sleep(1)
+        if res == 'hit':
+            await callback.message.edit_text(
+                text=await append_text(_user_bd, user_id, LEXICON['luck_com_attak'].format(_TEMP[y + 1] + str(x + 1))),
+                reply_markup=create_user_kb(pole.get_pole(), 'pole_comp')
+            )
+        else:
+            await callback.message.edit_text(
+                text=await append_text(_user_bd, user_id, LEXICON['sunk_com_attak'].format(_TEMP[y + 1] + str(x + 1))),
+                reply_markup=create_user_kb(pole.get_pole(), 'pole_comp')
+            )
         res = _user_bd[user_id].user_pole.random_hit()
     if res == 'victory':
+        await asyncio.sleep(1)
         await callback.message.edit_text(
-            text=f"{LEXICON['lose']: ^40}"
+            text=await append_text(_user_bd, user_id,LEXICON['lose']),
         )
     else:
+        await asyncio.sleep(1)
         await callback.message.edit_text(
-            text=LEXICON['miss_comp'].format(_TEMP[y + 1] + str(x + 1)),
+            text=await append_text(_user_bd, user_id, LEXICON['miss_comp'].format(_TEMP[y + 1] + str(x + 1))),
             reply_markup=create_user_kb(pole.get_pole(), 'pole_comp')
         )
-    callback.message.answer()
+
+
+async def append_text(_user_bd: list[UserBD], user_id: int, text)-> str:
+    if text:
+        _user_bd[user_id].chat.append(text)
+    return '\n\n'.join(_user_bd[user_id].chat)
+
