@@ -4,7 +4,7 @@ from aiogram.filters.callback_data import CallbackData
 
 from lexicon.lexicon_ru import LEXICON
 
-_TEMP = dict(zip(range(1,11), 'АБВГДЕЖЗИК'))
+_TEMP = dict(zip(range(1,11), 'АБВГДЕЖZИК'))
 
 class UsersCallbackFactory(CallbackData, prefix='user'):
     x: int
