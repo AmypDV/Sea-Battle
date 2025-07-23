@@ -66,8 +66,8 @@ async def get_callback_random(callback: CallbackQuery, _user_bd: list[UserBD], u
         reply_markup=create_user_kb(user_pole.get_pole(), 'random', 'start_game')
     )
 
-@user_router.callback_query(F.data.in_(['start_game', 'pole_comp']))
-async def get_callback_random(callback: CallbackQuery, _user_bd: list[UserBD], user_id: int):
+@user_router.callback_query(F.data =='start_game')
+async def get_callback_start(callback: CallbackQuery, _user_bd: list[UserBD], user_id: int):
     logger.debug('Начало хэндлера %s', __name__)
 
     pole = _user_bd[user_id].comp_pole
@@ -76,6 +76,15 @@ async def get_callback_random(callback: CallbackQuery, _user_bd: list[UserBD], u
         reply_markup=create_comp_kb(pole.get_pole(), 'pole_user')
     )
 
+@user_router.callback_query(F.data == 'pole_comp')
+async def get_callback_polecomp(callback: CallbackQuery, _user_bd: list[UserBD], user_id: int):
+    logger.debug('Начало хэндлера %s', __name__)
+
+    pole = _user_bd[user_id].comp_pole
+    await callback.message.edit_text(
+        text=await append_text(_user_bd, user_id, ''),
+        reply_markup=create_comp_kb(pole.get_pole(), 'pole_user')
+    )
 
 @user_router.callback_query(F.data == 'pole_user')
 async def get_callback_random(callback: CallbackQuery, _user_bd: list[UserBD], user_id: int):
