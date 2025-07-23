@@ -90,16 +90,15 @@ class Ship:
 
 class GamePole:
     def __init__(self, size=8):
-        self._size = size
-        self._ships = []
-        self._hits = []
-        self._all_cells: list[tuple[int, int]] = []
+        self._size = size #Размер поля
+        self._ships = [] #все корабли
+        self._hits = [] #все удары
+        self._all_cells: list[tuple[int, int]] = [] #все клетки кораблей
 
-    def set_hit(self, hit:tuple):
+    def set_hit(self, *hit):
         self._hits.append(hit)
 
     def __is_collides(self, ship):
-
         return any([ship.is_collide(s) for s in self._ships if s != ship])
 
     def __get_start_xy(self, ship):
@@ -171,8 +170,9 @@ class GamePole:
                     pole[y][x] = value
 
         for cords in self._hits:
-            y, x = cords
-            pole[y][x] = 3
+            if cords not in self._all_cells:
+                y, x = cords
+                pole[y][x] = 3
         return tuple([tuple(i) for i in pole])
 
     def hit(self, *yx):
@@ -180,15 +180,19 @@ class GamePole:
             for ship in self._ships:
                 if yx in ship.cells: # попадание в корабль
                     if ship[yx] == 1:
+                        y, x = yx
+                        self.set_hit(y, x)
                         ship[yx] = 2
-                        if all(all(map(lambda x: x == 2, s.cells.values())) for s in self._ships):
-                            return 'victory'
+                        print([i.cells for i in self._ships])
                         if all(map(lambda x: x == 2, ship.cells.values())): # потопил
                             for i in ship.cells.keys():
                                 ship[i] = 4
+                                if all(all(map(lambda x: x == 4, s.cells.values())) for s in self._ships):
+                                    return 'victory'
                             return 'sunk'
                         else:
                             return 'hit'
+
                     else:
                         return 'already_fight'
         else:
@@ -201,7 +205,11 @@ class GamePole:
     def random_hit(self):
         y = randint(0, self._size-1)
         x = randint(0, self._size-1)
+        while (y, x) in self._hits:
+            y = randint(0, self._size - 1)
+            x = randint(0, self._size - 1)
         print(f'удар соперника y={y} x={x}' )
+        self.set_hit(y, x)
         return y, x, self.hit(y, x)
 
 
